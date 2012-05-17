@@ -1,8 +1,3 @@
-/*
- * Copyright (c) AMXhost.ru.
- * Author: Vlad Kurkin, b-vladi@cs-console.ru
- */
-
 /**
  * @fileOverview Client-side версия модуля <a href="http://nodejs.org/docs/latest/api/buffers.html">Buffer</a> из <a href="http://nodejs.org/">NodeJS</a> c поддержкой <a href="https://developer.mozilla.org/en/JavaScript_typed_arrays/ArrayBuffer">ArrayBuffer</a>.
  * @author <a href="mailto:b-vladi@cs-console.ru">Влад Куркин</a>

@@ -1,7 +1,7 @@
 Buffer.js 1.0
 =========
 
-Client-side версия модуля <a href="http://nodejs.org/docs/latest/api/buffers.html">Buffer</a> из <a href="http://nodejs.org/">NodeJS</a> c поддержкой <a href="https://developer.mozilla.org/en/JavaScript_typed_arrays/ArrayBuffer">ArrayBuffer</a>.
+Client-side версия модуля <a href="http://nodejs.org/docs/latest/api/buffer.html">Buffer</a> из <a href="http://nodejs.org/">NodeJS</a> c поддержкой <a href="https://developer.mozilla.org/en/JavaScript_typed_arrays/ArrayBuffer">ArrayBuffer</a>.
 
 Отличия от NodeJS модуля:
 

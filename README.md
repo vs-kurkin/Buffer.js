@@ -6,7 +6,7 @@ Client-side версия модуля <a href="http://nodejs.org/docs/latest/api
 Отличия от NodeJS модуля:
 
 * Поддерживает ArrayBuffer и dataView
-* Поддерживает следующие кодироваки: `base64`, `hex`, `utf-8`
+* Поддерживает следующие кодировки: `base64`, `hex`, `utf-8`
 * Не реализована поддержка свойства `INSPECT_MAX_BYTES`
 * Добавлены методы: `toArray` и `toArrayBuffer`, если он поддерживается браузером
 

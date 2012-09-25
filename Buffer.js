@@ -4,19 +4,22 @@
  * @version 1.0
  */
 
-(function (window, undefined) {
-	var push = Array.prototype.push,
+(function () {
+	var
+		push = Array.prototype.push,
 		slice = Array.prototype.slice,
 		splice = Array.prototype.splice,
-		hasNativeBuffer = window.DataView && window.ArrayBuffer,
+		hasNativeBuffer = DataView && ArrayBuffer,
 		i2a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split(''),
-		a2i = [];
+		a2i = [],
+		i = 0;
 
-	for(var i = 0; i < i2a.length; i++){ /* init a2i */
+	// init a2i
+	for (i; i < i2a.length; i++) {
 		a2i[i2a[i].charCodeAt(0)] = i;
 	}
 
-	function getA2i(c) {
+	function getA2i (c) {
 		var result = a2i[c];
 
 		if (typeof result != 'number') {
@@ -26,7 +29,7 @@
 		return result;
 	}
 
-	function verifyInt(value, max, min) {
+	function verifyInt (value, max, min) {
 		if (typeof (value) != 'number') {
 			throw 'cannot write a non-number as a number';
 		}
@@ -54,7 +57,7 @@
 		}
 	}
 
-	function verifyIEEE754(value, max, min) {
+	function verifyIEEE754 (value, max, min) {
 		if (typeof (value) != 'number') {
 			throw 'cannot write a non-number as a number';
 		}
@@ -68,21 +71,36 @@
 		}
 	}
 
-	function readIEEE754(buffer, offset, isBE, mLen, nBytes) {
-		var m, eLen = nBytes * 8 - mLen - 1, eMax = (1 << eLen) - 1, eBias = eMax >> 1, nBits = -7, i = isBE ? 0 : (nBytes - 1), d = isBE ? 1 : -1, s = buffer[offset + i], e = s & ((1 << (-nBits)) - 1);
+	function readIEEE754 (buffer, offset, isBE, mLen, nBytes) {
+		var
+			m,
+			eLen = nBytes * 8 - mLen - 1,
+			eMax = (1 << eLen) - 1,
+			eBias = eMax >> 1,
+			nBits = -7,
+			i = isBE ? 0 : (nBytes - 1),
+			d = isBE ? 1 : -1,
+			s = buffer[offset + i],
+			e = s & ((1 << (-nBits)) - 1);
 
 		i += d;
 		s >>= (-nBits);
 		nBits += eLen;
 
-		for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {
+		while (nBits > 0) {
+			e = e * 256 + buffer[offset + i];
+			i += d;
+			nBits -= 8;
 		}
 
 		m = e & ((1 << (-nBits)) - 1);
 		e >>= (-nBits);
 		nBits += mLen;
 
-		for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {
+		while (nBits > 0) {
+			m = m * 256 + buffer[offset + i];
+			i += d;
+			nBits -= 8;
 		}
 
 		if (e === 0) {
@@ -97,8 +115,18 @@
 		return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
 	}
 
-	function writeIEEE754(buffer, value, offset, isBE, mLen, nBytes) {
-		var e, m, c, eLen = nBytes * 8 - mLen - 1, eMax = (1 << eLen) - 1, eBias = eMax >> 1, rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0, i = isBE ? (nBytes - 1) : 0, d = isBE ? -1 : 1, s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
+	function writeIEEE754 (buffer, value, offset, isBE, mLen, nBytes) {
+		var
+			e,
+			m,
+			c,
+			eLen = nBytes * 8 - mLen - 1,
+			eMax = (1 << eLen) - 1,
+			eBias = eMax >> 1,
+			rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0,
+			i = isBE ? (nBytes - 1) : 0,
+			d = isBE ? -1 : 1,
+			s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
 
 		value = Math.abs(value);
 
@@ -136,20 +164,29 @@
 			}
 		}
 
-		for (; mLen >= 8; buffer[offset + i] = m & 255, i += d, m /= 256, mLen -= 8) {
+		while (mLen >= 8) {
+			buffer[offset + i] = m & 255;
+			i += d;
+			m /= 256;
+			mLen -= 8;
 		}
 
 		e = (e << mLen) | m;
 		eLen += mLen;
 
-		for (; eLen > 0; buffer[offset + i] = e & 255, i += d, e /= 256, eLen -= 8) {
+		while (eLen > 0) {
+			buffer[offset + i] = e & 255;
+			i += d;
+			e /= 256;
+			eLen -= 8;
 		}
 
 		buffer[offset + i - d] |= s * 128;
 	}
 
-	function readUInt16(buffer, offset, isBigEndian, noAssert) {
+	function readUInt16 (buffer, offset, isBigEndian, noAssert) {
 		var result;
+
 		if (noAssert === true) {
 			if (offset === undefined || offset === null) {
 				throw 'missing offset';
@@ -175,8 +212,9 @@
 		return result;
 	}
 
-	function readUInt32(buffer, offset, isBigEndian, noAssert) {
+	function readUInt32 (buffer, offset, isBigEndian, noAssert) {
 		var result;
+
 		if (noAssert === true) {
 			if (offset === undefined || offset === null) {
 				throw 'missing offset';
@@ -206,7 +244,7 @@
 		return result;
 	}
 
-	function readFloat(buffer, offset, isBigEndian, noAssert) {
+	function readFloat (buffer, offset, isBigEndian, noAssert) {
 		if (noAssert === true) {
 			if (offset !== undefined && offset !== null) {
 				throw 'missing offset';
@@ -224,7 +262,7 @@
 		return readIEEE754(this, offset, isBigEndian, 23, 4);
 	}
 
-	function readDouble(buffer, offset, isBigEndian, noAssert) {
+	function readDouble (buffer, offset, isBigEndian, noAssert) {
 		if (noAssert === true) {
 			if (offset !== undefined && offset !== null) {
 				throw 'missing offset';
@@ -242,7 +280,7 @@
 		return readIEEE754(this, offset, isBigEndian, 52, 8);
 	}
 
-	function writeUInt16(buffer, value, offset, isBigEndian, noAssert) {
+	function writeUInt16 (buffer, value, offset, isBigEndian, noAssert) {
 		if (!noAssert) {
 			if (offset === undefined || offset === null) {
 				throw 'missing offset';
@@ -272,7 +310,7 @@
 		}
 	}
 
-	function writeUInt32(buffer, value, offset, isBigEndian, noAssert) {
+	function writeUInt32 (buffer, value, offset, isBigEndian, noAssert) {
 		if (!noAssert) {
 			if (offset === undefined || offset === null) {
 				throw 'missing offset';
@@ -306,7 +344,7 @@
 		}
 	}
 
-	function writeFloat(buffer, value, offset, isBigEndian, noAssert) {
+	function writeFloat (buffer, value, offset, isBigEndian, noAssert) {
 		if (!noAssert) {
 			if (offset === undefined || offset === null) {
 				throw 'missing offset';
@@ -330,7 +368,7 @@
 		writeIEEE754(buffer, value, offset, isBigEndian, 23, 4);
 	}
 
-	function writeDouble(buffer, value, offset, isBigEndian, noAssert) {
+	function writeDouble (buffer, value, offset, isBigEndian, noAssert) {
 		if (!noAssert) {
 			if (offset === undefined || offset === null) {
 				throw 'missing offset';
@@ -362,20 +400,30 @@
 	 * @param {string} [encoding="utf8"] Кодировка данных, если в <i>data</i> передана строка.
 	 * @property {number} length Размер буфера в байтах.
 	 */
-	function Buffer(data, encoding) {
-		var index = 0;
+	function Buffer (data, encoding) {
+		var
+			index = 0,
+			length;
 
 		switch (typeof data) {
 			case 'number':
 				this.length = data;
 				break;
 			case 'string':
-				var length = data.length;
+				length = data.length;
 				encoding = String(encoding || 'utf8').toLowerCase();
 
 				switch (encoding) {
 					case 'base64':
-						var groupCount = Math.floor(length / 4), c0, c1, c2, c3, missing = 0, indexIn = 0, len;
+						var
+							groupCount = Math.floor(length / 4),
+							c0,
+							c1,
+							c2,
+							c3,
+							missing = 0,
+							indexIn = 0,
+							len;
 
 						if (4 * groupCount != length) {
 							throw 'string length must be a multiple of four';
@@ -397,7 +445,7 @@
 							len = 0;
 						}
 
-						for (; index < groupCount; index++) {
+						while (index++ < groupCount) {
 							c0 = getA2i(data.charCodeAt(indexIn++));
 							c1 = getA2i(data.charCodeAt(indexIn++));
 							c2 = getA2i(data.charCodeAt(indexIn++));
@@ -427,13 +475,17 @@
 						}
 						break;
 					case 'hex':
-						for (; index < length; index += 2) {
+						while (index < length) {
 							push.call(this, parseInt(data.substr(index, 2), 16));
+							index += 2;
 						}
 						break;
 					case 'utf8':
-						for (; index < length; index++) {
-							var code = data.charCodeAt(index);
+						var code;
+
+						while (index < length) {
+							code = data.charCodeAt(index);
+
 							if (code <= 127) {
 								push.call(this, code);
 							} else if (code <= 2047) {
@@ -447,6 +499,8 @@
 							} else if (code <= 2147483647) {
 								push.call(this, code >>> 30 | 252, code >>> 24 & 63 | 128, code >>> 18 & 63 | 128, code >>> 12 & 63 | 128, code >>> 6 & 63 | 128, code & 63 | 128);
 							}
+
+							index++;
 						}
 						break;
 					default:
@@ -454,17 +508,20 @@
 				}
 				break;
 			default:
-				if (data instanceof Buffer || data.constructor == Array) {
+				if (data instanceof Buffer || Object.prototype.toString.call(data) === '[object Array]') {
 					push.apply(this, data);
 				} else if (hasNativeBuffer) {
-					if (data.constructor == window.ArrayBuffer) {
-						data = new window.DataView(data);
-					} else if (data.constructor != window.DataView) {
+					if (data instanceof ArrayBuffer) {
+						data = new DataView(data);
+					} else if (!(data instanceof DataView)) {
 						throw 'first argument needs to be a number, array, buffer, arrayBuffer, dataView or string';
 					}
 
-					for (; index < data.byteLength; index++) {
+					length = data.byteLength;
+
+					while (index < length) {
 						this[index] = data.getUint8(index);
+						index++;
 					}
 
 					this.length = index;
@@ -505,7 +562,8 @@
 	 * @function
 	 */
 	Buffer.prototype.copy = function (targetBuffer, targetStart, sourceStart, sourceEnd) {
-		var sourceLength = this.length,
+		var
+			sourceLength = this.length,
 			targetLength = targetBuffer.length,
 			data;
 
@@ -553,7 +611,8 @@
 	 * @function
 	 */
 	Buffer.prototype.toString = function (encoding, start, end) {
-		var result = '',
+		var
+			result = '',
 			index,
 			number,
 			length = this.length;
@@ -580,15 +639,21 @@
 
 		switch (encoding) {
 			case 'hex':
-				for (; index < end; index++) {
-					number = this[index];
-					result += number < 16 ? '0' + number.toString(16) : number.toString(16);
+				while (index < end) {
+					number = this[index++];
+					result += (number < 16 ? '0' : '') + number.toString(16);
 				}
 				break;
 			case 'base64':
-				var groupCount = Math.floor(length / 3), remaining = length - 3 * groupCount, b0, b1, b2, i = 0;
+				var
+					groupCount = Math.floor(length / 3),
+					remaining = length - 3 * groupCount,
+					b0,
+					b1,
+					b2,
+					i = 0;
 
-				for (; i < groupCount; i++) {
+				while (i++ < groupCount) {
 					b0 = this[index++] & 255;
 					b1 = this[index++] & 255;
 					b2 = this[index++] & 255;
@@ -623,8 +688,9 @@
 				}
 				break;
 			case 'utf8':
-				for (; index < end;) {
+				while (index < end) {
 					number = this[index++];
+
 					if (number < 128) {
 						result += String.fromCharCode(number);
 					} else if (number < 224) {
@@ -689,9 +755,11 @@
 		 * @function
 		 */
 		Buffer.prototype.toArrayBuffer = function (start, end) {
-			var dataView, byteLength, index = 0;
-
-			var length = this.length;
+			var
+				dataView,
+				byteLength,
+				index = 0,
+				length = this.length;
 
 			start = start || 0;
 			end = end || length;
@@ -715,8 +783,8 @@
 			byteLength = end - start;
 			dataView = new DataView(new ArrayBuffer(byteLength));
 
-			for (; start < end; start++) {
-				dataView.setUint8(index++, this[start]);
+			while (start < end) {
+				dataView.setUint8(index++, this[start++]);
 			}
 
 			return dataView.buffer;
@@ -744,9 +812,15 @@
 	 * @function
 	 */
 	Buffer.prototype.write = function (data, offset, length, encoding) {
+		var
+			remaining,
+			buffer,
+			byteLength;
+
 		offset = +offset || 0;
 
-		var remaining = this.length - offset;
+		remaining = this.length - offset;
+
 		if (!length) {
 			length = remaining;
 		} else {
@@ -756,10 +830,10 @@
 			}
 		}
 
-		encoding = String(encoding || 'utf8').toLowerCase();
+		encoding = (String(encoding) || 'utf8').toLowerCase();
 
-		var buffer = new Buffer(data, encoding),
-			byteLength = buffer.length;
+		buffer = new Buffer(data, encoding);
+		byteLength = buffer.length;
 
 		buffer = slice.call(buffer);
 		buffer.unshift(offset, length);
@@ -806,8 +880,8 @@
 			throw 'end out of bounds';
 		}
 
-		for (; start < end; start++) {
-			this[start] = value;
+		while (start < end) {
+			this[start++] = value;
 		}
 	};
 
@@ -857,21 +931,25 @@
 
 	Buffer.prototype.readInt16LE = function (offset, noAssert) {
 		var value = readUInt16(this, offset, false, noAssert);
+
 		return value & 32768 ? (65535 - value + 1) * -1 : value;
 	};
 
 	Buffer.prototype.readInt16BE = function (offset, noAssert) {
 		var value = readUInt16(this, offset, true, noAssert);
+
 		return value & 32768 ? (65535 - value + 1) * -1 : value;
 	};
 
 	Buffer.prototype.readInt32LE = function (offset, noAssert) {
 		var value = readUInt32(this, offset, false, noAssert);
+
 		return value & 2147483648 ? (4294967295 - value + 1) * -1 : value;
 	};
 
 	Buffer.prototype.readInt32BE = function (offset, noAssert) {
 		var value = readUInt32(this, offset, true, noAssert);
+
 		return value & 2147483648 ? (4294967295 - value + 1) * -1 : value;
 	};
 
@@ -996,5 +1074,4 @@
 	};
 
 	window.Buffer = Buffer;
-
-})(window, void 0);
+}());

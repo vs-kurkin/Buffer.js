@@ -4,12 +4,12 @@
  * @version 1.0
  */
 
-(function () {
+(function (window) {
 	var
 		push = Array.prototype.push,
 		slice = Array.prototype.slice,
 		splice = Array.prototype.splice,
-		hasNativeBuffer = DataView && ArrayBuffer,
+		hasNativeBuffer = window.DataView && window.ArrayBuffer,
 		i2a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split(''),
 		a2i = [],
 		i = 0;
@@ -303,9 +303,9 @@
 				if (data instanceof Buffer || Object.prototype.toString.call(data) === '[object Array]') {
 					push.apply(this, data);
 				} else if (hasNativeBuffer) {
-					if (data instanceof ArrayBuffer) {
-						data = new DataView(data);
-					} else if (!(data instanceof DataView)) {
+					if (data instanceof window.ArrayBuffer) {
+						data = new window.DataView(data);
+					} else if (!(data instanceof window.DataView)) {
 						throw 'first argument needs to be a number, array, buffer, arrayBuffer, dataView or string';
 					}
 
@@ -560,7 +560,7 @@
 			}
 
 			if (end === start || length === 0) {
-				return new ArrayBuffer(0);
+				return new window.ArrayBuffer(0);
 			}
 
 			if (start < 0 || start >= length) {
@@ -572,7 +572,7 @@
 			}
 
 			byteLength = end - start;
-			dataView = new DataView(new ArrayBuffer(byteLength));
+			dataView = new window.DataView(new window.ArrayBuffer(byteLength));
 
 			while (start < end) {
 				dataView.setUint8(index++, this[start++]);
@@ -1335,4 +1335,4 @@
 	};
 
 	window.Buffer = Buffer;
-}());
+}(window));

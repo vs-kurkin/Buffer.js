@@ -192,6 +192,10 @@
 	 * @property {number} length Размер буфера в байтах.
 	 */
 	function Buffer (data, encoding) {
+		if(!(this instanceof Buffer)){
+			return new Buffer(data, encoding);
+		}
+
 		var
 			index = 0,
 			length;

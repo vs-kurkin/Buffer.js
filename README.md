@@ -1,4 +1,4 @@
-Buffer.js 2.0
+Buffer.js 2.1
 =========
 
 Client-side version of the <a href="http://nodejs.org/docs/latest/api/buffer.html">Buffer</a> from <a href="http://nodejs.org/">NodeJS</a> with support <a href="https://developer.mozilla.org/en/JavaScript_typed_arrays/ArrayBuffer">ArrayBuffer</a>.

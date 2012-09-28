@@ -688,6 +688,47 @@
 	};
 
 	/**
+	 * @param list
+	 * @param length
+	 * @return {buffer}
+	 */
+	Buffer.prototype.concat = function (list, length) {
+		if (Object.prototype.toString.call(list) !== '[object Array]') {
+			throw 'Usage: Buffer.concat(list, [length])';
+		}
+
+		var
+			index,
+			buffer,
+			pos = 0;
+
+		if (list.length === 0) {
+			return new Buffer(0);
+		} else if (list.length === 1) {
+			return list[0];
+		}
+
+		if (typeof length !== 'number') {
+			length = 0;
+
+			for (index = 0; index < list.length; index++) {
+				length += list[index].length;
+			}
+		}
+
+		buffer = new Buffer(length);
+
+		for (index = 0; index < list.length; index++) {
+			var buf = list[index];
+
+			buf.copy(buffer, pos);
+			pos += buf.length;
+		}
+
+		return buffer;
+	};
+
+	/**
 	 * @param offset
 	 * @param noAssert
 	 * @return {number}

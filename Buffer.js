@@ -4,12 +4,12 @@
  * @version 1.0
  */
 
-(function () {
+(function (window) {
 	var
 		push = Array.prototype.push,
 		slice = Array.prototype.slice,
 		splice = Array.prototype.splice,
-		hasNativeBuffer = DataView && ArrayBuffer,
+		hasNativeBuffer = window.DataView && window.ArrayBuffer,
 		i2a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split(''),
 		a2i = [],
 		i = 0;
@@ -1335,4 +1335,4 @@
 	};
 
 	window.Buffer = Buffer;
-}());
+}(window));

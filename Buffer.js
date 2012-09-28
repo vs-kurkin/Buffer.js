@@ -259,7 +259,7 @@
 			}
 		}
 
-		return readIEEE754(this, offset, isBigEndian, 23, 4);
+		return readIEEE754(buffer, offset, isBigEndian, 23, 4);
 	}
 
 	function readDouble (buffer, offset, isBigEndian, noAssert) {
@@ -277,7 +277,7 @@
 			}
 		}
 
-		return readIEEE754(this, offset, isBigEndian, 52, 8);
+		return readIEEE754(buffer, offset, isBigEndian, 52, 8);
 	}
 
 	function writeUInt16 (buffer, value, offset, isBigEndian, noAssert) {

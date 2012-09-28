@@ -9,7 +9,6 @@
 		push = Array.prototype.push,
 		slice = Array.prototype.slice,
 		splice = Array.prototype.splice,
-		hasNativeBuffer = window.DataView && window.ArrayBuffer,
 		i2a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split(''),
 		a2i = [],
 		i = 0;
@@ -302,10 +301,10 @@
 			default:
 				if (data instanceof Buffer || Object.prototype.toString.call(data) === '[object Array]') {
 					push.apply(this, data);
-				} else if (hasNativeBuffer) {
-					if (data instanceof ArrayBuffer) {
-						data = new DataView(data);
-					} else if (!(data instanceof DataView)) {
+				} else if (Buffer.supportNativeBuffer) {
+					if (data instanceof window.ArrayBuffer) {
+						data = new window.DataView(data);
+					} else if (!(data instanceof window.DataView)) {
 						throw 'first argument needs to be a number, array, buffer, arrayBuffer, dataView or string';
 					}
 
@@ -322,6 +321,11 @@
 				}
 		}
 	}
+
+	/**
+	 * @type {boolean}
+	 */
+	Buffer.supportNativeBuffer = window.DataView && window.ArrayBuffer;
 
 	/**
 	 * Проверяет, является ли переданный объект экземпляром конструктора {@link Buffer}.
@@ -345,213 +349,178 @@
 	};
 
 	Buffer.prototype = {
-	/**
-	 * Копирует данные в буфер <i>targetBuffer</i>.
-	 * @param {Buffer} targetBuffer Буфер, в который необходимо скопировать данные.
-	 * @param {number} [targetStart=0] Позиция, с которой вставляются копируемые данные.
-	 * @param {number} [sourceStart=0] Начальная позиция копируемых данных в буфере.
-	 * @param {number} [sourceEnd=this.length] Конечная позиция копируемых данных в буфере.
-	 * @return {number} Новая длина буфера <i>targetBuffer</i>.
-	 * @function
-	 */
-	copy: function (targetBuffer, targetStart, sourceStart, sourceEnd) {
-		var
-			sourceLength = this.length,
-			targetLength = targetBuffer.length,
-			data;
+		constructor: Buffer,
 
-		sourceStart = sourceStart || 0;
-		sourceEnd = sourceEnd || sourceLength;
-		targetStart = targetStart || 0;
+		/**
+		 * Копирует данные в буфер <i>targetBuffer</i>.
+		 * @param {Buffer} targetBuffer Буфер, в который необходимо скопировать данные.
+		 * @param {number} [targetStart=0] Позиция, с которой вставляются копируемые данные.
+		 * @param {number} [sourceStart=0] Начальная позиция копируемых данных в буфере.
+		 * @param {number} [sourceEnd=this.length] Конечная позиция копируемых данных в буфере.
+		 * @return {number} Новая длина буфера <i>targetBuffer</i>.
+		 * @function
+		 */
+		copy: function (targetBuffer, targetStart, sourceStart, sourceEnd) {
+			var
+				sourceLength = this.length,
+				targetLength = targetBuffer.length,
+				data;
 
-		if (sourceEnd < sourceStart) {
-			throw 'sourceEnd < sourceStart';
-		}
+			sourceStart = sourceStart || 0;
+			sourceEnd = sourceEnd || sourceLength;
+			targetStart = targetStart || 0;
 
-		if (sourceEnd === sourceStart || targetBuffer.length === 0 || sourceLength === 0) {
-			return 0;
-		}
+			if (sourceEnd < sourceStart) {
+				throw 'sourceEnd < sourceStart';
+			}
 
-		if (targetStart < 0 || targetStart >= targetLength) {
-			throw 'targetStart out of bounds';
-		}
+			if (sourceEnd === sourceStart || targetBuffer.length === 0 || sourceLength === 0) {
+				return 0;
+			}
 
-		if (sourceStart < 0 || sourceStart >= sourceLength) {
-			throw 'sourceStart out of bounds';
-		}
+			if (targetStart < 0 || targetStart >= targetLength) {
+				throw 'targetStart out of bounds';
+			}
 
-		if (sourceEnd < 0 || sourceEnd > sourceLength) {
-			throw 'sourceEnd out of bounds';
-		}
+			if (sourceStart < 0 || sourceStart >= sourceLength) {
+				throw 'sourceStart out of bounds';
+			}
 
-		if (targetLength - targetStart < sourceEnd - sourceStart) {
-			sourceEnd = targetLength - targetStart + sourceStart;
-		}
+			if (sourceEnd < 0 || sourceEnd > sourceLength) {
+				throw 'sourceEnd out of bounds';
+			}
 
-		data = slice.call(this, sourceStart, sourceEnd);
-		data.unshift(targetStart, sourceEnd - sourceStart);
-		splice.apply(targetBuffer, data);
+			if (targetLength - targetStart < sourceEnd - sourceStart) {
+				sourceEnd = targetLength - targetStart + sourceStart;
+			}
 
-		return targetBuffer.length;
-	},
+			data = slice.call(this, sourceStart, sourceEnd);
+			data.unshift(targetStart, sourceEnd - sourceStart);
+			splice.apply(targetBuffer, data);
 
-	/**
-	 * Преобразует буфер в строку.
-	 * @param {string} [encoding=utf8] Кодировка, в которую необходимо преобразовать буфер.
-	 * @param {number} [start=0] Начальная позиция кодируемых данных.
-	 * @param {number} [end=this.length] Конечная позиция кодируемых данных.
-	 * @return {string} Результат кодирования.
-	 * @function
-	 */
-	toString: function (encoding, start, end) {
-		var
-			result = '',
-			index,
-			number,
-			length = this.length;
+			return targetBuffer.length;
+		},
 
-		if (start === undefined || start < 0) {
-			start = 0;
-		} else if (start > length) {
-			start = length;
-		}
+		/**
+		 * Преобразует буфер в строку.
+		 * @param {string} [encoding=utf8] Кодировка, в которую необходимо преобразовать буфер.
+		 * @param {number} [start=0] Начальная позиция кодируемых данных.
+		 * @param {number} [end=this.length] Конечная позиция кодируемых данных.
+		 * @return {string} Результат кодирования.
+		 * @function
+		 */
+		toString: function (encoding, start, end) {
+			var
+				result = '',
+				index,
+				number,
+				length = this.length;
 
-		if (end === undefined || end > length) {
-			end = length;
-		} else if (end < 0) {
-			end = 0;
-		}
+			if (start === undefined || start < 0) {
+				start = 0;
+			} else if (start > length) {
+				start = length;
+			}
 
-		if (start == end) {
-			return result;
-		}
+			if (end === undefined || end > length) {
+				end = length;
+			} else if (end < 0) {
+				end = 0;
+			}
 
-		encoding = String(encoding || 'utf8').toLowerCase();
-		index = start;
-		length = end - start;
+			if (start == end) {
+				return result;
+			}
 
-		switch (encoding) {
-			case 'hex':
-				while (index < end) {
-					number = this[index++];
-					result += (number < 16 ? '0' : '') + number.toString(16);
-				}
-				break;
-			case 'base64':
-				var
-					groupCount = Math.floor(length / 3),
-					remaining = length - 3 * groupCount,
-					b0,
-					b1,
-					b2,
-					i = 0;
+			encoding = String(encoding || 'utf8').toLowerCase();
+			index = start;
+			length = end - start;
 
-				while (i++ < groupCount) {
-					b0 = this[index++] & 255;
-					b1 = this[index++] & 255;
-					b2 = this[index++] & 255;
+			switch (encoding) {
+				case 'hex':
+					while (index < end) {
+						number = this[index++];
+						result += (number < 16 ? '0' : '') + number.toString(16);
+					}
+					break;
+				case 'base64':
+					var
+						groupCount = Math.floor(length / 3),
+						remaining = length - 3 * groupCount,
+						b0,
+						b1,
+						b2,
+						i = 0;
 
-					result += i2a[b0 >> 2];
-					result += i2a[(b0 << 4) & 63 | (b1 >> 4)];
-					result += i2a[(b1 << 2) & 63 | (b2 >> 6)];
-					result += i2a[b2 & 63];
-				}
-
-				switch (remaining) {
-					case 0:
-						break;
-					case 1:
-						b0 = this[index++] & 255;
-
-						result += i2a[b0 >> 2];
-						result += i2a[(b0 << 4) & 63];
-						result += '==';
-						break;
-					case 2:
+					while (i++ < groupCount) {
 						b0 = this[index++] & 255;
 						b1 = this[index++] & 255;
+						b2 = this[index++] & 255;
 
 						result += i2a[b0 >> 2];
 						result += i2a[(b0 << 4) & 63 | (b1 >> 4)];
-						result += i2a[(b1 << 2) & 63];
-						result += '=';
-						break;
-					default:
-						throw 'never happen';
-				}
-				break;
-			case 'utf8':
-				while (index < end) {
-					number = this[index++];
-
-					if (number < 128) {
-						result += String.fromCharCode(number);
-					} else if (number < 224) {
-						result += String.fromCharCode(((31 & number) << 6) | ((63 & this[index++]) << 0));
-					} else if (number < 240) {
-						result += String.fromCharCode(((15 & number) << 12) | ((63 & this[index++]) << 6) | ((63 & this[index++]) << 0));
-					} else if (number < 248) {
-						result += String.fromCharCode(((7 & number) << 18) | ((63 & this[index++]) << 12) | ((63 & this[index++]) << 6) | ((63 & this[index++]) << 0));
-					} else if (number < 252) {
-						result += String.fromCharCode(((3 & number) << 24) | ((63 & this[index++]) << 18) | ((63 & this[index++]) << 12) | ((63 & this[index++]) << 6) | ((63 & this[index++]) << 0));
-					} else if (number < 254) {
-						result += String.fromCharCode(((1 & number) << 30) | ((63 & this[index++]) << 24) | ((63 & this[index++]) << 18) | ((63 & this[index++]) << 12) | ((63 & this[index++]) << 6) | ((63 & this[index++]) << 0));
+						result += i2a[(b1 << 2) & 63 | (b2 >> 6)];
+						result += i2a[b2 & 63];
 					}
-				}
-				break;
-			default:
-				throw 'unknown encoding';
-		}
 
-		return result;
-	},
+					switch (remaining) {
+						case 0:
+							break;
+						case 1:
+							b0 = this[index++] & 255;
 
-	/**
-	 * Преобразует буфер в массив.
-	 * @param {number} [start=0] Начальная позиция преобразуемых данных.
-	 * @param {number} [end=this.length] Конечная позиция преобразуемых данных.
-	 * @return {Array} Результат преобразования.
-	 * @function
-	 */
-	toArray: function (start, end) {
-		var length = this.length;
+							result += i2a[b0 >> 2];
+							result += i2a[(b0 << 4) & 63];
+							result += '==';
+							break;
+						case 2:
+							b0 = this[index++] & 255;
+							b1 = this[index++] & 255;
 
-		start = start || 0;
-		end = end || length;
+							result += i2a[b0 >> 2];
+							result += i2a[(b0 << 4) & 63 | (b1 >> 4)];
+							result += i2a[(b1 << 2) & 63];
+							result += '=';
+							break;
+						default:
+							throw 'never happen';
+					}
+					break;
+				case 'utf8':
+					while (index < end) {
+						number = this[index++];
 
-		if (end < start) {
-			throw 'end < start';
-		}
+						if (number < 128) {
+							result += String.fromCharCode(number);
+						} else if (number < 224) {
+							result += String.fromCharCode(((31 & number) << 6) | ((63 & this[index++]) << 0));
+						} else if (number < 240) {
+							result += String.fromCharCode(((15 & number) << 12) | ((63 & this[index++]) << 6) | ((63 & this[index++]) << 0));
+						} else if (number < 248) {
+							result += String.fromCharCode(((7 & number) << 18) | ((63 & this[index++]) << 12) | ((63 & this[index++]) << 6) | ((63 & this[index++]) << 0));
+						} else if (number < 252) {
+							result += String.fromCharCode(((3 & number) << 24) | ((63 & this[index++]) << 18) | ((63 & this[index++]) << 12) | ((63 & this[index++]) << 6) | ((63 & this[index++]) << 0));
+						} else if (number < 254) {
+							result += String.fromCharCode(((1 & number) << 30) | ((63 & this[index++]) << 24) | ((63 & this[index++]) << 18) | ((63 & this[index++]) << 12) | ((63 & this[index++]) << 6) | ((63 & this[index++]) << 0));
+						}
+					}
+					break;
+				default:
+					throw 'unknown encoding';
+			}
 
-		if (end === start || length === 0) {
-			return [];
-		}
+			return result;
+		},
 
-		if (start < 0 || start >= length) {
-			throw 'start out of bounds';
-		}
-
-		if (end < 0 || end > length) {
-			throw 'end out of bounds';
-		}
-
-		return slice.call(this, start, end);
-	},
-
-	if (hasNativeBuffer) {
 		/**
-		 * Преобразует буфер в DataView, если этот тип поддерживается браузером.
-		 * @param {number} [start=0] Начальная позиция данных буфера.
-		 * @param {number} [end=this.length] Конечная позиция данных буфера.
-		 * @return {DataView} Новый буфер.
+		 * Преобразует буфер в массив.
+		 * @param {number} [start=0] Начальная позиция преобразуемых данных.
+		 * @param {number} [end=this.length] Конечная позиция преобразуемых данных.
+		 * @return {Array} Результат преобразования.
 		 * @function
 		 */
-		Buffer.prototype.toDataView = function (start, end) {
-			var
-				dataView,
-				byteLength,
-				index = 0,
-				length = this.length;
+		toArray: function (start, end) {
+			var length = this.length;
 
 			start = start || 0;
 			end = end || length;
@@ -561,7 +530,47 @@
 			}
 
 			if (end === start || length === 0) {
-				return new ArrayBuffer(0);
+				return [];
+			}
+
+			if (start < 0 || start >= length) {
+				throw 'start out of bounds';
+			}
+
+			if (end < 0 || end > length) {
+				throw 'end out of bounds';
+			}
+
+			return slice.call(this, start, end);
+		},
+
+		/**
+		 * Преобразует буфер в DataView, если этот тип поддерживается браузером.
+		 * @param {number} [start=0] Начальная позиция данных буфера.
+		 * @param {number} [end=this.length] Конечная позиция данных буфера.
+		 * @return {DataView} Новый буфер.
+		 * @function
+		 */
+		toDataView: function (start, end) {
+			var
+				dataView,
+				byteLength,
+				index = 0,
+				length = this.length;
+
+			if (Buffer.supportNativeBuffer) {
+				throw 'DataView is not supported';
+			}
+
+			start = start || 0;
+			end = end || length;
+
+			if (end < start) {
+				throw 'end < start';
+			}
+
+			if (end === start || length === 0) {
+				return new window.ArrayBuffer(0);
 			}
 
 			if (start < 0 || start >= length) {
@@ -573,14 +582,14 @@
 			}
 
 			byteLength = end - start;
-			dataView = new DataView(new ArrayBuffer(byteLength));
+			dataView = new window.DataView(new window.ArrayBuffer(byteLength));
 
 			while (start < end) {
 				dataView.setUint8(index++, this[start++]);
 			}
 
 			return dataView;
-		};
+		},
 
 		/**
 		 * Преобразует буфер в ArrayBuffer, если этот тип поддерживается браузером.
@@ -589,752 +598,764 @@
 		 * @return {ArrayBuffer} Новый буфер.
 		 * @function
 		 */
-		Buffer.prototype.toArrayBuffer = function (start, end) {
-			return this.toDataView(start, end).buffer;
-		};
-	}
-
-	/**
-	 * Копирует данные с позиции start до позиции end в новый буфер и возвращает его в качестве результата.
-	 * @param {number} [start=0] Начальная позиция.
-	 * @param {number} [end=this.length] Конечная позиция.
-	 * @return {Buffer} Новый буфер.
-	 * @function
-	 */
-	Buffer.prototype.slice = function (start, end) {
-		return new Buffer(slice.call(this, start, end));
-	};
-
-	/**
-	 * Записывает данные в кодировке encoding с позиции offset длинной length.
-	 * @param {number|string|Array|ArrayBuffer|DataView|Buffer} data
-	 * @param {number} [offset=0]
-	 * @param {number} [length=this.length-offset]
-	 * @param {string} [encoding="utf8"]
-	 * @return {number} Число записанных байт
-	 * @function
-	 */
-	Buffer.prototype.write = function (data, offset, length, encoding) {
-		var
-			remaining,
-			buffer,
-			byteLength;
-
-		offset = +offset || 0;
-
-		remaining = this.length - offset;
-
-		if (!length) {
-			length = remaining;
-		} else {
-			length = +length;
-			if (length > remaining) {
-				length = remaining;
+		toArrayBuffer: function (start, end) {
+			if (Buffer.supportNativeBuffer) {
+				throw 'ArrayBuffer is not supported';
 			}
-		}
 
-		encoding = (String(encoding) || 'utf8').toLowerCase();
+			return this.toDataView(start, end).buffer;
+		},
 
-		buffer = new Buffer(data, encoding);
-		byteLength = buffer.length;
+		/**
+		 * Копирует данные с позиции start до позиции end в новый буфер и возвращает его в качестве результата.
+		 * @param {number} [start=0] Начальная позиция.
+		 * @param {number} [end=this.length] Конечная позиция.
+		 * @return {Buffer} Новый буфер.
+		 * @function
+		 */
+		slice: function (start, end) {
+			return new Buffer(slice.call(this, start, end));
+		},
 
-		buffer = slice.call(buffer);
-		buffer.unshift(offset, length);
-		splice.apply(this, buffer);
+		/**
+		 * Записывает данные в кодировке encoding с позиции offset длинной length.
+		 * @param {number|string|Array|ArrayBuffer|DataView|Buffer} data
+		 * @param {number} [offset=0]
+		 * @param {number} [length=this.length-offset]
+		 * @param {string} [encoding="utf8"]
+		 * @return {number} Число записанных байт
+		 * @function
+		 */
+		write: function (data, offset, length, encoding) {
+			var
+				remaining,
+				buffer,
+				byteLength;
 
-		return byteLength < length ? byteLength : length;
-	},
+			offset = +offset || 0;
 
-	/**
-	 * Заполняет буфер значением value с позиции start до позиции end.
-	 * @param {number|string} [value=0] Число или текстовый символ, код которого будет использован для заполнения.
-	 * @param {number} [start=0] Начальная позиция.
-	 * @param {number} [end=buffer.length] Конечная позиция.
-	 * @function
-	 */
-	fill: function (value, start, end) {
-		var length = this.length;
+			remaining = this.length - offset;
 
-		value = value || 0;
-		start = start || 0;
-		end = end || length;
+			if (!length) {
+				length = remaining;
+			} else {
+				length = +length;
+				if (length > remaining) {
+					length = remaining;
+				}
+			}
 
-		if (typeof value === 'string') {
-			value = value.charCodeAt(0);
-		}
+			encoding = (String(encoding) || 'utf8').toLowerCase();
 
-		if (typeof value !== 'number' || isNaN(value)) {
-			throw 'value is not a number';
-		}
+			buffer = new Buffer(data, encoding);
+			byteLength = buffer.length;
 
-		if (end < start) {
-			throw 'end < start';
-		}
+			buffer = slice.call(buffer);
+			buffer.unshift(offset, length);
+			splice.apply(this, buffer);
 
-		if (end === start || length === 0) {
-			return 0;
-		}
+			return byteLength < length ? byteLength : length;
+		},
 
-		if (start < 0 || start >= length) {
-			throw 'start out of bounds';
-		}
+		/**
+		 * Заполняет буфер значением value с позиции start до позиции end.
+		 * @param {number|string} [value=0] Число или текстовый символ, код которого будет использован для заполнения.
+		 * @param {number} [start=0] Начальная позиция.
+		 * @param {number} [end=buffer.length] Конечная позиция.
+		 * @function
+		 */
+		fill: function (value, start, end) {
+			var length = this.length;
 
-		if (end < 0 || end > length) {
-			throw 'end out of bounds';
-		}
+			value = value || 0;
+			start = start || 0;
+			end = end || length;
 
-		while (start < end) {
-			this[start++] = value;
-		}
-	},
+			if (typeof value === 'string') {
+				value = value.charCodeAt(0);
+			}
 
-	/**
-	 * @param list
-	 * @param length
-	 * @return {buffer}
-	 */
-	concat: function (list, length) {
-		if (Object.prototype.toString.call(list) !== '[object Array]') {
-			throw 'Usage: Buffer.concat(list, [length])';
-		}
+			if (typeof value !== 'number' || isNaN(value)) {
+				throw 'value is not a number';
+			}
 
-		var
-			index,
-			buffer,
-			pos = 0;
+			if (end < start) {
+				throw 'end < start';
+			}
 
-		if (list.length === 0) {
-			return new Buffer(0);
-		} else if (list.length === 1) {
-			return list[0];
-		}
+			if (end === start || length === 0) {
+				return 0;
+			}
 
-		if (typeof length !== 'number') {
-			length = 0;
+			if (start < 0 || start >= length) {
+				throw 'start out of bounds';
+			}
+
+			if (end < 0 || end > length) {
+				throw 'end out of bounds';
+			}
+
+			while (start < end) {
+				this[start++] = value;
+			}
+		},
+
+		/**
+		 * @param list
+		 * @param length
+		 * @return {buffer}
+		 */
+		concat: function (list, length) {
+			if (Object.prototype.toString.call(list) !== '[object Array]') {
+				throw 'Usage: Buffer.concat(list, [length])';
+			}
+
+			var
+				index,
+				buffer,
+				pos = 0;
+
+			if (list.length === 0) {
+				return new Buffer(0);
+			} else if (list.length === 1) {
+				return list[0];
+			}
+
+			if (typeof length !== 'number') {
+				length = 0;
+
+				for (index = 0; index < list.length; index++) {
+					length += list[index].length;
+				}
+			}
+
+			buffer = new Buffer(length);
 
 			for (index = 0; index < list.length; index++) {
-				length += list[index].length;
+				var buf = list[index];
+
+				buf.copy(buffer, pos);
+				pos += buf.length;
 			}
+
+			return buffer;
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readUInt8: function (offset, noAssert) {
+			if (noAssert === true) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (offset >= this.length) {
+					throw 'trying to read beyond buffer length';
+				}
+			}
+
+			return this[offset];
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readInt8: function (offset, noAssert) {
+			if (noAssert === true) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (offset >= this.length) {
+					throw 'trying to read beyond buffer length';
+				}
+			}
+
+			return !(this[offset] & 128) ? this[offset] : ((255 - this[offset] + 1) * -1);
+		},
+
+		/**
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readUInt16: function (offset, isBigEndian, noAssert) {
+			var result;
+
+			if (noAssert === true) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (typeof (isBigEndian) !== 'boolean') {
+					throw 'missing or invalid endian';
+				}
+
+				if (offset + 1 >= this.length) {
+					throw 'Trying to read beyond buffer length';
+				}
+			}
+
+			if (isBigEndian) {
+				result = this[offset] << 8;
+				result |= this[offset + 1];
+			} else {
+				result = this[offset];
+				result |= this[offset + 1] << 8;
+			}
+
+			return result;
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {*}
+		 */
+		readUInt16LE: function (offset, noAssert) {
+			return this.readUInt16(offset, false, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readUInt16BE: function (offset, noAssert) {
+			return this.readUInt16(offset, true, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readInt16: function (offset, isBigEndian, noAssert) {
+			var value = this.readUInt16(offset, isBigEndian, noAssert);
+
+			return value & 32768 ? (65535 - value + 1) * -1 : value;
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readInt16LE: function (offset, noAssert) {
+			return this.readInt16(offset, false, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readInt16BE: function (offset, noAssert) {
+			return this.readInt16(offset, true, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readUInt32: function (offset, isBigEndian, noAssert) {
+			var result;
+
+			if (noAssert === true) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (typeof (isBigEndian) !== 'boolean') {
+					throw 'missing or invalid endian';
+				}
+
+				if (offset + 3 >= this.length) {
+					throw 'Trying to read beyond this length';
+				}
+			}
+
+			if (isBigEndian) {
+				result = this[offset + 1] << 16;
+				result |= this[offset + 2] << 8;
+				result |= this[offset + 3];
+				result += (this[offset] << 24 >>> 0);
+			} else {
+				result = this[offset + 2] << 16;
+				result |= this[offset + 1] << 8;
+				result |= this[offset];
+				result += (this[offset + 3] << 24 >>> 0);
+			}
+
+			return result;
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readUInt32LE: function (offset, noAssert) {
+			return this.readUInt32(offset, false, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readUInt32BE: function (offset, noAssert) {
+			return this.readUInt32(offset, true, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readInt32: function (offset, isBigEndian, noAssert) {
+			var value = this.readUInt32(offset, isBigEndian, noAssert);
+
+			return value & 2147483648 ? (4294967295 - value + 1) * -1 : value;
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readInt32LE: function (offset, noAssert) {
+			return this.readInt32(offset, false, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readInt32BE: function (offset, noAssert) {
+			return this.readInt32(offset, true, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readFloat: function (offset, isBigEndian, noAssert) {
+			if (noAssert === true) {
+				if (offset !== undefined && offset !== null) {
+					throw 'missing offset';
+				}
+
+				if (typeof (isBigEndian) !== 'boolean') {
+					throw 'missing or invalid endian';
+				}
+
+				if (offset + 3 < this.length) {
+					throw 'Trying to read beyond buffer length';
+				}
+			}
+
+			return readIEEE754(this, offset, isBigEndian, 23, 4);
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readFloatLE: function (offset, noAssert) {
+			return this.readFloat(offset, false, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readFloatBE: function (offset, noAssert) {
+			return this.readFloat(offset, true, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readDouble: function (offset, isBigEndian, noAssert) {
+			if (noAssert === true) {
+				if (offset !== undefined && offset !== null) {
+					throw 'missing offset';
+				}
+
+				if (typeof (isBigEndian) !== 'boolean') {
+					throw 'missing or invalid endian';
+				}
+
+				if (offset + 7 < this.length) {
+					throw 'Trying to read beyond buffer length';
+				}
+			}
+
+			return readIEEE754(this, offset, isBigEndian, 52, 8);
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readDoubleLE: function (offset, noAssert) {
+			return this.readDouble(offset, false, noAssert);
+		},
+
+		/**
+		 * @param offset
+		 * @param noAssert
+		 * @return {number}
+		 */
+		readDoubleBE: function (offset, noAssert) {
+			return this.readDouble(offset, true, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeUInt8: function (value, offset, noAssert) {
+			if (!noAssert) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (value === undefined || value === null) {
+					throw 'missing value';
+				}
+
+				if (offset >= this.length) {
+					throw 'trying to write beyond buffer length';
+				}
+
+				verifyInt(value, 255, undefined);
+			}
+
+			this[offset] = value;
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeInt8: function (value, offset, noAssert) {
+			if (!noAssert) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (value === undefined || value === null) {
+					throw 'missing value';
+				}
+
+				if (offset >= this.length) {
+					throw 'trying to write beyond buffer length';
+				}
+
+				verifyInt(value, 127, -128);
+			}
+
+			if (value >= 0) {
+				this.writeUInt8(value, offset, noAssert);
+			} else {
+				this.writeUInt8(255 + value + 1, offset, noAssert);
+			}
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 */
+		writeUInt16: function (value, offset, isBigEndian, noAssert) {
+			if (!noAssert) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (value === undefined || value === null) {
+					throw 'missing value';
+				}
+
+				if (typeof (isBigEndian) !== 'boolean') {
+					throw 'missing or invalid endian';
+				}
+
+				if (offset + 1 >= this.length) {
+					throw 'trying to write beyond this length';
+				}
+
+				verifyInt(value, 65535, undefined);
+			}
+
+			if (isBigEndian) {
+				this[offset] = (value & 65280) >>> 8;
+				this[offset + 1] = value & 255;
+			} else {
+				this[offset + 1] = (value & 65280) >>> 8;
+				this[offset] = value & 255;
+			}
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeUInt16LE: function (value, offset, noAssert) {
+			this.writeUInt16(value, offset, false, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeUInt16BE: function (value, offset, noAssert) {
+			this.writeUInt16(value, offset, true, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 */
+		writeInt16: function (value, offset, isBigEndian, noAssert) {
+			if (!noAssert) {
+				verifyInt(value, 32767, -32768);
+			}
+
+			this.writeUInt16(value < 0 ? 65535 + value + 1 : value, offset, isBigEndian, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeInt16LE: function (value, offset, noAssert) {
+			this.writeInt16(value, offset, false, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeInt16BE: function (value, offset, noAssert) {
+			this.writeUInt16(value, offset, true, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 */
+		writeUInt32: function (value, offset, isBigEndian, noAssert) {
+			if (!noAssert) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (value === undefined || value === null) {
+					throw 'missing value';
+				}
+
+				if (typeof (isBigEndian) !== 'boolean') {
+					throw 'missing or invalid endian';
+				}
+
+				if (offset + 3 >= this.length) {
+					throw 'trying to write beyond this length';
+				}
+
+				verifyInt(value, 4294967295, undefined);
+			}
+
+			if (isBigEndian) {
+				this[offset] = (value >>> 24) & 255;
+				this[offset + 1] = (value >>> 16) & 255;
+				this[offset + 2] = (value >>> 8) & 255;
+				this[offset + 3] = value & 255;
+			} else {
+				this[offset + 3] = (value >>> 24) & 255;
+				this[offset + 2] = (value >>> 16) & 255;
+				this[offset + 1] = (value >>> 8) & 255;
+				this[offset] = value & 255;
+			}
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeUInt32LE: function (value, offset, noAssert) {
+			this.writeUInt32(value, offset, false, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeUInt32BE: function (value, offset, noAssert) {
+			this.writeUInt32(value, offset, true, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 */
+		writeInt32: function (value, offset, isBigEndian, noAssert) {
+			if (!noAssert) {
+				verifyInt(value, 2147483647, -2147483648);
+			}
+
+			this.writeUInt32(value < 0 ? 4294967295 + value + 1 : value, offset, isBigEndian, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeInt32LE: function (value, offset, noAssert) {
+			this.writeInt32(value, offset, false, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeInt32BE: function (value, offset, noAssert) {
+			this.writeInt32(value, offset, true, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 */
+		writeFloat: function (value, offset, isBigEndian, noAssert) {
+			if (!noAssert) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (value === undefined || value === null) {
+					throw 'missing value';
+				}
+
+				if (typeof (isBigEndian) !== 'boolean') {
+					throw 'missing or invalid endian';
+				}
+
+				if (offset + 3 >= this.length) {
+					throw 'trying to write beyond this length';
+				}
+
+				verifyIEEE754(value, 3.4028234663852886e+38, -3.4028234663852886e+38);
+			}
+
+			writeIEEE754(this, value, offset, isBigEndian, 23, 4);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeFloatLE: function (value, offset, noAssert) {
+			this.writeFloat(value, offset, false, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeFloatBE: function (value, offset, noAssert) {
+			this.writeFloat(value, offset, true, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param isBigEndian
+		 * @param noAssert
+		 */
+		writeDouble: function (value, offset, isBigEndian, noAssert) {
+			if (!noAssert) {
+				if (offset === undefined || offset === null) {
+					throw 'missing offset';
+				}
+
+				if (value === undefined || value === null) {
+					throw 'missing value';
+				}
+
+				if (typeof (isBigEndian) !== 'boolean') {
+					throw 'missing or invalid endian';
+				}
+
+				if (offset + 7 >= this.length) {
+					throw 'trying to write beyond this length';
+				}
+
+				verifyIEEE754(value, 1.7976931348623157E+308, -1.7976931348623157E+308);
+			}
+
+			writeIEEE754(this, value, offset, isBigEndian, 52, 8);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeDoubleLE: function (value, offset, noAssert) {
+			this.writeDouble(value, offset, false, noAssert);
+		},
+
+		/**
+		 * @param value
+		 * @param offset
+		 * @param noAssert
+		 */
+		writeDoubleBE: function (value, offset, noAssert) {
+			this.writeDouble(value, offset, true, noAssert);
 		}
-
-		buffer = new Buffer(length);
-
-		for (index = 0; index < list.length; index++) {
-			var buf = list[index];
-
-			buf.copy(buffer, pos);
-			pos += buf.length;
-		}
-
-		return buffer;
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readUInt8: function (offset, noAssert) {
-		if (noAssert === true) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (offset >= this.length) {
-				throw 'trying to read beyond buffer length';
-			}
-		}
-
-		return this[offset];
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readInt8: function (offset, noAssert) {
-		if (noAssert === true) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (offset >= this.length) {
-				throw 'trying to read beyond buffer length';
-			}
-		}
-
-		return !(this[offset] & 128) ? this[offset] : ((255 - this[offset] + 1) * -1);
-	},
-
-	/**
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readUInt16: function (offset, isBigEndian, noAssert) {
-		var result;
-
-		if (noAssert === true) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (typeof (isBigEndian) !== 'boolean') {
-				throw 'missing or invalid endian';
-			}
-
-			if (offset + 1 >= this.length) {
-				throw 'Trying to read beyond buffer length';
-			}
-		}
-
-		if (isBigEndian) {
-			result = this[offset] << 8;
-			result |= this[offset + 1];
-		} else {
-			result = this[offset];
-			result |= this[offset + 1] << 8;
-		}
-
-		return result;
-	},
-
-	readUInt16LE: function (offset, noAssert) {
-		return this.readUInt16(offset, false, noAssert);
-	},
-
-	readUInt16BE: function (offset, noAssert) {
-		return this.readUInt16(offset, true, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readInt16: function (offset, isBigEndian, noAssert) {
-		var value = this.readUInt16(offset, isBigEndian, noAssert);
-
-		return value & 32768 ? (65535 - value + 1) * -1 : value;
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	Buffer.prototype.readInt16LE = function (offset, noAssert) {
-		return this.readInt16(offset, false, noAssert);
-	};
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readInt16BE: function (offset, noAssert) {
-		return this.readInt16(offset, true, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readUInt32: function (offset, isBigEndian, noAssert) {
-		var result;
-
-		if (noAssert === true) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (typeof (isBigEndian) !== 'boolean') {
-				throw 'missing or invalid endian';
-			}
-
-			if (offset + 3 >= this.length) {
-				throw 'Trying to read beyond this length';
-			}
-		}
-
-		if (isBigEndian) {
-			result = this[offset + 1] << 16;
-			result |= this[offset + 2] << 8;
-			result |= this[offset + 3];
-			result += (this[offset] << 24 >>> 0);
-		} else {
-			result = this[offset + 2] << 16;
-			result |= this[offset + 1] << 8;
-			result |= this[offset];
-			result += (this[offset + 3] << 24 >>> 0);
-		}
-
-		return result;
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readUInt32LE: function (offset, noAssert) {
-		return this.readUInt32(offset, false, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readUInt32BE: function (offset, noAssert) {
-		return this.readUInt32(offset, true, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readInt32: function (offset, isBigEndian, noAssert) {
-		var value = this.readUInt32(offset, isBigEndian, noAssert);
-
-		return value & 2147483648 ? (4294967295 - value + 1) * -1 : value;
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readInt32LE: function (offset, noAssert) {
-		return this.readInt32(offset, false, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readInt32BE: function (offset, noAssert) {
-		return this.readInt32(offset, true, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readFloat: function (offset, isBigEndian, noAssert) {
-		if (noAssert === true) {
-			if (offset !== undefined && offset !== null) {
-				throw 'missing offset';
-			}
-
-			if (typeof (isBigEndian) !== 'boolean') {
-				throw 'missing or invalid endian';
-			}
-
-			if (offset + 3 < this.length) {
-				throw 'Trying to read beyond buffer length';
-			}
-		}
-
-		return readIEEE754(this, offset, isBigEndian, 23, 4);
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readFloatLE: function (offset, noAssert) {
-		return this.readFloat(offset, false, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readFloatBE: function (offset, noAssert) {
-		return this.readFloat(offset, true, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readDouble: function (offset, isBigEndian, noAssert) {
-		if (noAssert === true) {
-			if (offset !== undefined && offset !== null) {
-				throw 'missing offset';
-			}
-
-			if (typeof (isBigEndian) !== 'boolean') {
-				throw 'missing or invalid endian';
-			}
-
-			if (offset + 7 < this.length) {
-				throw 'Trying to read beyond buffer length';
-			}
-		}
-
-		return readIEEE754(this, offset, isBigEndian, 52, 8);
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readDoubleLE: function (offset, noAssert) {
-		return this.readDouble(offset, false, noAssert);
-	},
-
-	/**
-	 * @param offset
-	 * @param noAssert
-	 * @return {number}
-	 */
-	readDoubleBE: function (offset, noAssert) {
-		return this.readDouble(offset, true, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeUInt8: function (value, offset, noAssert) {
-		if (!noAssert) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (value === undefined || value === null) {
-				throw 'missing value';
-			}
-
-			if (offset >= this.length) {
-				throw 'trying to write beyond buffer length';
-			}
-
-			verifyInt(value, 255, undefined);
-		}
-
-		this[offset] = value;
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeInt8: function (value, offset, noAssert) {
-		if (!noAssert) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (value === undefined || value === null) {
-				throw 'missing value';
-			}
-
-			if (offset >= this.length) {
-				throw 'trying to write beyond buffer length';
-			}
-
-			verifyInt(value, 127, -128);
-		}
-
-		if (value >= 0) {
-			this.writeUInt8(value, offset, noAssert);
-		} else {
-			this.writeUInt8(255 + value + 1, offset, noAssert);
-		}
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 */
-	writeUInt16: function (value, offset, isBigEndian, noAssert) {
-		if (!noAssert) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (value === undefined || value === null) {
-				throw 'missing value';
-			}
-
-			if (typeof (isBigEndian) !== 'boolean') {
-				throw 'missing or invalid endian';
-			}
-
-			if (offset + 1 >= this.length) {
-				throw 'trying to write beyond this length';
-			}
-
-			verifyInt(value, 65535, undefined);
-		}
-
-		if (isBigEndian) {
-			this[offset] = (value & 65280) >>> 8;
-			this[offset + 1] = value & 255;
-		} else {
-			this[offset + 1] = (value & 65280) >>> 8;
-			this[offset] = value & 255;
-		}
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeUInt16LE: function (value, offset, noAssert) {
-		this.writeUInt16(value, offset, false, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeUInt16BE: function (value, offset, noAssert) {
-		this.writeUInt16(value, offset, true, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 */
-	writeInt16: function (value, offset, isBigEndian, noAssert) {
-		if (!noAssert) {
-			verifyInt(value, 32767, -32768);
-		}
-
-		this.writeUInt16(value < 0 ? 65535 + value + 1 : value, offset, isBigEndian, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeInt16LE: function (value, offset, noAssert) {
-		this.writeInt16(value, offset, false, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeInt16BE: function (value, offset, noAssert) {
-		this.writeUInt16(value, offset, true, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 */
-	writeUInt32: function (value, offset, isBigEndian, noAssert) {
-		if (!noAssert) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (value === undefined || value === null) {
-				throw 'missing value';
-			}
-
-			if (typeof (isBigEndian) !== 'boolean') {
-				throw 'missing or invalid endian';
-			}
-
-			if (offset + 3 >= this.length) {
-				throw 'trying to write beyond this length';
-			}
-
-			verifyInt(value, 4294967295, undefined);
-		}
-
-		if (isBigEndian) {
-			this[offset] = (value >>> 24) & 255;
-			this[offset + 1] = (value >>> 16) & 255;
-			this[offset + 2] = (value >>> 8) & 255;
-			this[offset + 3] = value & 255;
-		} else {
-			this[offset + 3] = (value >>> 24) & 255;
-			this[offset + 2] = (value >>> 16) & 255;
-			this[offset + 1] = (value >>> 8) & 255;
-			this[offset] = value & 255;
-		}
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeUInt32LE: function (value, offset, noAssert) {
-		this.writeUInt32(value, offset, false, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeUInt32BE: function (value, offset, noAssert) {
-		this.writeUInt32(value, offset, true, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 */
-	writeInt32: function (value, offset, isBigEndian, noAssert) {
-		if (!noAssert) {
-			verifyInt(value, 2147483647, -2147483648);
-		}
-
-		this.writeUInt32(value < 0 ? 4294967295 + value + 1 : value, offset, isBigEndian, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeInt32LE: function (value, offset, noAssert) {
-		this.writeInt32(value, offset, false, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeInt32BE: function (value, offset, noAssert) {
-		this.writeInt32(value, offset, true, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 */
-	writeFloat: function (value, offset, isBigEndian, noAssert) {
-		if (!noAssert) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (value === undefined || value === null) {
-				throw 'missing value';
-			}
-
-			if (typeof (isBigEndian) !== 'boolean') {
-				throw 'missing or invalid endian';
-			}
-
-			if (offset + 3 >= this.length) {
-				throw 'trying to write beyond this length';
-			}
-
-			verifyIEEE754(value, 3.4028234663852886e+38, -3.4028234663852886e+38);
-		}
-
-		writeIEEE754(this, value, offset, isBigEndian, 23, 4);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeFloatLE: function (value, offset, noAssert) {
-		this.writeFloat(value, offset, false, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeFloatBE: function (value, offset, noAssert) {
-		this.writeFloat(value, offset, true, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param isBigEndian
-	 * @param noAssert
-	 */
-	writeDouble: function (value, offset, isBigEndian, noAssert) {
-		if (!noAssert) {
-			if (offset === undefined || offset === null) {
-				throw 'missing offset';
-			}
-
-			if (value === undefined || value === null) {
-				throw 'missing value';
-			}
-
-			if (typeof (isBigEndian) !== 'boolean') {
-				throw 'missing or invalid endian';
-			}
-
-			if (offset + 7 >= this.length) {
-				throw 'trying to write beyond this length';
-			}
-
-			verifyIEEE754(value, 1.7976931348623157E+308, -1.7976931348623157E+308);
-		}
-
-		writeIEEE754(this, value, offset, isBigEndian, 52, 8);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeDoubleLE: function (value, offset, noAssert) {
-		this.writeDouble(value, offset, false, noAssert);
-	},
-
-	/**
-	 * @param value
-	 * @param offset
-	 * @param noAssert
-	 */
-	writeDoubleBE: function (value, offset, noAssert) {
-		this.writeDouble(value, offset, true, noAssert);
-	}
-
 	};
 
 	window.Buffer = Buffer;

@@ -1,7 +1,7 @@
 /**
- * @fileOverview Client-side версия модуля <a href="http://nodejs.org/docs/latest/api/buffers.html">Buffer</a> из <a href="http://nodejs.org/">NodeJS</a> c поддержкой <a href="https://developer.mozilla.org/en/JavaScript_typed_arrays/ArrayBuffer">ArrayBuffer</a>.
- * @author <a href="mailto:b-vladi@cs-console.ru">Влад Куркин</a>
- * @version 1.0
+ * @fileOverview Client-side version of the <a href="http://nodejs.org/docs/latest/api/buffer.html">Buffer</a> from <a href="http://nodejs.org/">NodeJS</a> with support <a href="https://developer.mozilla.org/en/JavaScript_typed_arrays/ArrayBuffer">ArrayBuffer</a>.
+ * @author <a href="mailto:b-vladi@cs-console.ru">Vlad Kurkin</a>
+ * @version 2.3
  */
 
 (function (window) {
@@ -9,6 +9,7 @@
 		push = Array.prototype.push,
 		slice = Array.prototype.slice,
 		splice = Array.prototype.splice,
+		toString = Object.prototype.toString,
 		i2a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split(''),
 		a2i = [],
 		i = 0;
@@ -196,13 +197,17 @@
 			index = 0,
 			length;
 
+		if (!(this instanceof Buffer)) {
+			return new Buffer(data, encoding);
+		}
+
 		switch (typeof data) {
 			case 'number':
 				this.length = data;
 				break;
 			case 'string':
 				length = data.length;
-				encoding = String(encoding || 'utf8').toLowerCase();
+				encoding = (String(encoding) || 'utf8').toLowerCase();
 
 				switch (encoding) {
 					case 'base64':
@@ -315,7 +320,7 @@
 						index++;
 					}
 
-					this.length = index;
+					this.length = length;
 				} else {
 					throw 'first argument needs to be a number, array, buffer or string';
 				}
@@ -346,6 +351,47 @@
 	 */
 	Buffer.byteLength = function (data, encoding) {
 		return new Buffer(data, encoding).length;
+	};
+
+	/**
+	 * @param list
+	 * @param length
+	 * @return {buffer}
+	 */
+	Buffer.concat = function (list, length) {
+		var
+			index,
+			buffer,
+			pos = 0;
+
+		if (toString.call(list) !== '[object Array]') {
+			throw 'Usage: Buffer.concat(list, [length])';
+		}
+
+		if (list.length === 0) {
+			return new Buffer(0);
+		} else if (list.length === 1) {
+			return list[0];
+		}
+
+		if (typeof length !== 'number') {
+			length = 0;
+
+			for (index = 0; index < list.length; index++) {
+				length += list[index].length;
+			}
+		}
+
+		buffer = new Buffer(length);
+
+		for (index = 0; index < list.length; index++) {
+			var buf = list[index];
+
+			buf.copy(buffer, pos);
+			pos += buf.length;
+		}
+
+		return buffer;
 	};
 
 	Buffer.prototype = {
@@ -607,14 +653,35 @@
 		},
 
 		/**
-		 * Копирует данные с позиции start до позиции end в новый буфер и возвращает его в качестве результата.
+		 * Обрезает буфер, оставляя данные с позиции start до позиции end.
 		 * @param {number} [start=0] Начальная позиция.
 		 * @param {number} [end=this.length] Конечная позиция.
 		 * @return {Buffer} Новый буфер.
 		 * @function
 		 */
 		slice: function (start, end) {
-			return new Buffer(slice.call(this, start, end));
+			var length = this.length;
+
+			if (start === undefined) {
+				start = 0;
+			}
+
+			if (end === undefined) {
+				end = length;
+			}
+
+			if (end > length) {
+				throw new Error('oob');
+			}
+
+			if (start > end) {
+				throw new Error('oob');
+			}
+
+			splice.call(this, 0, start);
+			splice.call(this, end - start, length - end);
+
+			return this;
 		},
 
 		/**
@@ -698,47 +765,6 @@
 			while (start < end) {
 				this[start++] = value;
 			}
-		},
-
-		/**
-		 * @param list
-		 * @param length
-		 * @return {buffer}
-		 */
-		concat: function (list, length) {
-			if (Object.prototype.toString.call(list) !== '[object Array]') {
-				throw 'Usage: Buffer.concat(list, [length])';
-			}
-
-			var
-				index,
-				buffer,
-				pos = 0;
-
-			if (list.length === 0) {
-				return new Buffer(0);
-			} else if (list.length === 1) {
-				return list[0];
-			}
-
-			if (typeof length !== 'number') {
-				length = 0;
-
-				for (index = 0; index < list.length; index++) {
-					length += list[index].length;
-				}
-			}
-
-			buffer = new Buffer(length);
-
-			for (index = 0; index < list.length; index++) {
-				var buf = list[index];
-
-				buf.copy(buffer, pos);
-				pos += buf.length;
-			}
-
-			return buffer;
 		},
 
 		/**

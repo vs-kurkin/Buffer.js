@@ -1,4 +1,4 @@
-({define:typeof define!="undefined"?define:function(deps, factory){
+({define: typeof define != 'undefined' ? define: function(deps, factory){
 	factory = factory || deps;
 	return factory();
 }}).define(function(require, exports, module){
@@ -7,7 +7,7 @@ var exports = exports || window;
 /**
  * @fileOverview Client-side version of the <a href="http://nodejs.org/docs/latest/api/buffer.html">Buffer</a> from <a href="http://nodejs.org/">NodeJS</a> with support <a href="https://developer.mozilla.org/en/JavaScript_typed_arrays/ArrayBuffer">ArrayBuffer</a>.
  * @author <a href="mailto:b-vladi@cs-console.ru">Vlad Kurkin</a>
- * @version 2.3
+ * @version 2.4
  */
 
 (function (window) {
@@ -214,7 +214,7 @@ var exports = exports || window;
 				break;
 			case 'string':
 				length = data.length;
-				encoding = encoding == null || encoding === "undefined" ? void 8 : encoding 
+				encoding = encoding == null || encoding === 'undefined' ? void 0 : encoding 
 				encoding = String((encoding || 'utf8').toLowerCase());
 				switch (encoding) {
 					case 'base64':

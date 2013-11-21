@@ -345,6 +345,25 @@ var Buffer = (function () {
     };
 
     /**
+     * Возвращает true, если кодировка поддерживается буффером, или false в противном случае.
+     * @static
+     * @param {String} encoding
+     * @returns {boolean}
+     */
+    Buffer.isEncoding = function (encoding) {
+        switch (encoding && encoding.toLowerCase()) {
+            case 'hex':
+            case 'utf8':
+            case 'utf-8':
+            case 'base64':
+                return true;
+
+            default:
+                return false;
+        }
+    };
+
+    /**
      * Вычисляет количество байт переданных данных. Параметры аналогичны {@link Buffer}.
      * @static
      * @param {number|string|Array|ArrayBuffer|DataView|Buffer} data Данные, размер которых необходимо вычислить.
@@ -599,24 +618,6 @@ var Buffer = (function () {
          */
         toJSON: function () {
             return slice.call(this, 0);
-        },
-
-        /**
-         * Возвращает true, если кодировка поддерживается буффером, или false в противном случае.
-         * @param {String} encoding
-         * @returns {boolean}
-         */
-        isEncoding: function (encoding) {
-            switch (encoding && encoding.toLowerCase()) {
-                case 'hex':
-                case 'utf8':
-                case 'utf-8':
-                case 'base64':
-                    return true;
-
-                default:
-                    return false;
-            }
         },
 
         /**

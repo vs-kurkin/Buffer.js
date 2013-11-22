@@ -15,8 +15,8 @@ var Buffer = (function () {
         i = 0;
 
     // init a2i
-    while (i++ < i2a.length) {
-        a2i[i2a[i].charCodeAt(0)] = i;
+    while (i < i2a.length) {
+        a2i[i2a[i].charCodeAt(0)] = i++;
     }
 
     function getA2i(c) {

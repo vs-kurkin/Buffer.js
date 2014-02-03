@@ -1,7 +1,7 @@
 /**
  * @fileOverview Client-side version of the <a href="http://nodejs.org/docs/latest/api/buffer.html">Buffer</a> from <a href="http://nodejs.org/">NodeJS</a> with support <a href="https://developer.mozilla.org/en/JavaScript_typed_arrays/ArrayBuffer">ArrayBuffer</a>.
  * @author <a href="mailto:b-vladi@cs-console.ru">Vlad Kurkin</a>
- * @version 2.5
+ * @version 2.6
  */
 
 var Buffer = (function () {
@@ -12,7 +12,8 @@ var Buffer = (function () {
         toString = Object.prototype.toString,
         i2a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'.split(''),
         a2i = [],
-        i = 0;
+        i = 0,
+        global = new Function('return this')();
 
     // init a2i
     while (i < i2a.length) {
@@ -309,9 +310,9 @@ var Buffer = (function () {
                 if (data instanceof Buffer || Object.prototype.toString.call(data) === '[object Array]') {
                     push.apply(this, data);
                 } else if (Buffer.supportNativeBuffer) {
-                    if (data instanceof window.ArrayBuffer) {
-                        data = new window.DataView(data);
-                    } else if (!(data instanceof window.DataView)) {
+                    if (data instanceof global.ArrayBuffer) {
+                        data = new global.DataView(data);
+                    } else if (!(data instanceof global.DataView)) {
                         throw 'first argument needs to be a number, array, buffer, arrayBuffer, dataView or string';
                     }
 
@@ -332,7 +333,7 @@ var Buffer = (function () {
     /**
      * @type {boolean}
      */
-    Buffer.supportNativeBuffer = window.DataView && window.ArrayBuffer;
+    Buffer.supportNativeBuffer = global.DataView && global.ArrayBuffer;
 
     /**
      * Проверяет, является ли переданный объект экземпляром конструктора {@link Buffer}.
@@ -646,7 +647,7 @@ var Buffer = (function () {
             }
 
             if (end === start || length === 0) {
-                return new window.ArrayBuffer(0);
+                return new global.ArrayBuffer(0);
             }
 
             if (start < 0 || start >= length) {
@@ -658,7 +659,7 @@ var Buffer = (function () {
             }
 
             byteLength = end - start;
-            dataView = new window.DataView(new window.ArrayBuffer(byteLength));
+            dataView = new global.DataView(new global.ArrayBuffer(byteLength));
 
             while (start < end) {
                 dataView.setUint8(index++, this[start++]);
@@ -1417,6 +1418,6 @@ var Buffer = (function () {
     try {
         module.exports = Buffer;
     } catch (e) {
-        this.Buffer = Buffer;
+        global.Buffer = Buffer;
     }
 }());
